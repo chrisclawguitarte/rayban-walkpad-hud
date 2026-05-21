@@ -1,0 +1,20 @@
+{
+  "name": "rayban-walkpad-hud",
+  "version": "1.0.0",
+  "description": "A 600x600 Meta Ray-Ban Display heads-up display for walking-pad step tracking.",
+  "private": true,
+  "scripts": {
+    "start": "node server.js",
+    "check": "node scripts/check.js"
+  },
+  "keywords": [
+    "meta-ray-ban-display",
+    "walkpad",
+    "steps",
+    "hud",
+    "device-motion"
+  ],
+  "author": "Chris Guitarte",
+  "license": "UNLICENSED"
+}
+

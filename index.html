@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=600, height=600, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#000000">
+    <title>Ray-Ban Walkpad HUD</title>
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="icon" href="favicon.png">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div id="app" class="hud-shell controls-visible">
+      <main class="walk-hud" aria-label="Ray-Ban walkpad heads up display">
+        <section class="topline" aria-label="Session status">
+          <div class="status-pill" id="session-status">READY</div>
+          <div class="clock-pill" id="clock">--:--</div>
+        </section>
+
+        <section class="steps-zone" aria-labelledby="steps-label">
+          <div class="readout-label" id="steps-label">STEPS</div>
+          <div class="steps-value" id="steps-value">0</div>
+        </section>
+
+        <section class="duration-zone" aria-labelledby="duration-label">
+          <div class="duration-value" id="duration-value">00:00</div>
+          <div class="readout-label" id="duration-label">WALK TIME</div>
+        </section>
+
+        <section class="sensor-grid" aria-label="Walk metrics">
+          <div class="sensor-cell">
+            <span>CADENCE</span>
+            <strong id="cadence-value">-- SPM</strong>
+          </div>
+          <div class="sensor-cell">
+            <span>MOTION</span>
+            <strong id="motion-value">WAIT</strong>
+          </div>
+          <div class="sensor-cell">
+            <span>ORIENT</span>
+            <strong id="orientation-value">--</strong>
+          </div>
+          <div class="sensor-cell">
+            <span>GPS</span>
+            <strong id="gps-value">--</strong>
+          </div>
+        </section>
+
+        <section class="session-strip" aria-label="Session details">
+          <div>
+            <span>LAST</span>
+            <strong id="last-session">--</strong>
+          </div>
+          <div>
+            <span>SENS</span>
+            <strong id="sensitivity-value">NORM</strong>
+          </div>
+          <div>
+            <span>SIGNAL</span>
+            <strong id="signal-value">--</strong>
+          </div>
+        </section>
+
+        <nav class="control-panel" id="control-panel" aria-label="Walk controls">
+          <button class="focusable control control--primary" type="button" data-action="start" data-preferred-focus>START</button>
+          <button class="focusable control" type="button" data-action="pause">PAUSE</button>
+          <button class="focusable control" type="button" data-action="reset">RESET</button>
+          <button class="focusable control" type="button" data-action="sensitivity">SENS</button>
+          <button class="focusable control" type="button" data-action="hide">HIDE</button>
+        </nav>
+      </main>
+    </div>
+    <script src="app.js"></script>
+  </body>
+</html>
+
