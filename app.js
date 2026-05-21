@@ -10,27 +10,39 @@
   var PROFILES = {
     high: {
       label: "HIGH",
-      base: 0.14,
-      min: 0.18,
-      max: 1.15,
-      noise: 1.2,
-      minInterval: 250
+      base: 0.045,
+      min: 0.055,
+      max: 0.80,
+      noise: 0.85,
+      orientationBase: 0.55,
+      orientationMin: 0.70,
+      orientationMax: 6.5,
+      orientationNoise: 0.55,
+      minInterval: 300
     },
     normal: {
       label: "NORM",
-      base: 0.22,
-      min: 0.26,
-      max: 1.45,
-      noise: 1.45,
-      minInterval: 280
+      base: 0.075,
+      min: 0.095,
+      max: 1.00,
+      noise: 1.00,
+      orientationBase: 0.95,
+      orientationMin: 1.15,
+      orientationMax: 8.5,
+      orientationNoise: 0.70,
+      minInterval: 360
     },
     low: {
       label: "LOW",
-      base: 0.34,
-      min: 0.40,
-      max: 1.80,
-      noise: 1.75,
-      minInterval: 320
+      base: 0.14,
+      min: 0.18,
+      max: 1.30,
+      noise: 1.20,
+      orientationBase: 1.65,
+      orientationMin: 2.00,
+      orientationMax: 11.0,
+      orientationNoise: 0.90,
+      minInterval: 420
     }
   };
 
@@ -47,6 +59,11 @@
     filteredSignal: 0,
     previousSignal: 0,
     noise: 0,
+    lastOrientationVector: null,
+    orientationSignal: 0,
+    previousOrientationSignal: 0,
+    orientationNoise: 0,
+    lastOrientationAt: 0,
     sensitivity: readSensitivity(),
     listenersAttached: false,
     locationWatchId: null,
@@ -345,6 +362,11 @@
     state.filteredSignal = 0;
     state.previousSignal = 0;
     state.noise = 0;
+    state.lastOrientationVector = null;
+    state.orientationSignal = 0;
+    state.previousOrientationSignal = 0;
+    state.orientationNoise = 0;
+    state.lastOrientationAt = 0;
     setStatus("READY");
     renderLastSession();
     renderSession();
@@ -509,21 +531,43 @@
     state.filteredSignal = state.filteredSignal * 0.70 + signal * 0.30;
     state.noise = state.noise * 0.96 + Math.abs(state.filteredSignal) * 0.04;
 
-    detectStep(Date.now(), state.filteredSignal);
-    state.previousSignal = state.filteredSignal;
+    var strength = Math.abs(state.filteredSignal);
+    detectMotionStep(Date.now(), strength);
+    state.previousSignal = strength;
     renderSignal();
   }
 
-  function detectStep(now, signal) {
+  function detectMotionStep(now, strength) {
     var profile = PROFILES[state.sensitivity] || PROFILES.normal;
     var threshold = clamp(profile.base + state.noise * profile.noise, profile.min, profile.max);
-    var risingThroughThreshold = signal > threshold && state.previousSignal <= threshold * 0.72;
+    var activeStepSignal = strength > threshold;
     var enoughTime = now - state.lastStepAt > profile.minInterval;
 
-    if (!risingThroughThreshold || !enoughTime) {
+    if (!activeStepSignal || !enoughTime) {
       return;
     }
 
+    recordStep(now);
+  }
+
+  function detectOrientationStep(now, strength) {
+    var profile = PROFILES[state.sensitivity] || PROFILES.normal;
+    var threshold = clamp(
+      profile.orientationBase + state.orientationNoise * profile.orientationNoise,
+      profile.orientationMin,
+      profile.orientationMax
+    );
+    var activeStepSignal = strength > threshold;
+    var enoughTime = now - state.lastStepAt > profile.minInterval;
+
+    if (!activeStepSignal || !enoughTime) {
+      return;
+    }
+
+    recordStep(now);
+  }
+
+  function recordStep(now) {
     state.steps += 1;
     state.lastStepAt = now;
     state.recentSteps.push(now);
@@ -549,6 +593,37 @@
     } else {
       dom.orientation.textContent = "TILT";
     }
+
+    if (!state.running) {
+      return;
+    }
+
+    var now = Date.now();
+    state.lastOrientationAt = now;
+    var current = {
+      beta: beta || 0,
+      gamma: gamma || 0,
+      alpha: alpha || 0
+    };
+
+    if (state.lastOrientationVector) {
+      var betaDelta = current.beta - state.lastOrientationVector.beta;
+      var gammaDelta = current.gamma - state.lastOrientationVector.gamma;
+      var alphaDelta = angularDelta(current.alpha, state.lastOrientationVector.alpha) * 0.25;
+      var delta = Math.sqrt(betaDelta * betaDelta + gammaDelta * gammaDelta + alphaDelta * alphaDelta);
+      state.orientationSignal = state.orientationSignal * 0.62 + delta * 0.38;
+      state.orientationNoise = state.orientationNoise * 0.95 + state.orientationSignal * 0.05;
+      detectOrientationStep(now, state.orientationSignal);
+      state.previousOrientationSignal = state.orientationSignal;
+      renderSignal();
+    }
+
+    state.lastOrientationVector = current;
+  }
+
+  function angularDelta(a, b) {
+    var delta = Math.abs(a - b) % 360;
+    return delta > 180 ? 360 - delta : delta;
   }
 
   function onPosition(position) {
