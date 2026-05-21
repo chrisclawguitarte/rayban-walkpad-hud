@@ -55,6 +55,9 @@ assert(js.indexOf("DeviceMotionEvent") !== -1, "device motion API is used");
 assert(js.indexOf("DeviceOrientationEvent") !== -1, "device orientation API is used");
 assert(js.indexOf("navigator.geolocation.watchPosition") !== -1, "geolocation watch is used");
 assert(js.indexOf("requestPermission") !== -1, "sensor permissions are user-gesture gated");
+assert(js.indexOf("PERMISSION_TIMEOUT_MS") !== -1, "sensor permission requests are time-boxed");
+assert(js.indexOf("permissionWithTimeout") !== -1, "hanging sensor permissions cannot block start");
+assert(js.indexOf("DeviceOrientationEvent.requestPermission") < js.indexOf("DeviceMotionEvent.requestPermission"), "orientation permission is requested before motion permission");
 assert(js.indexOf("event.preventDefault()") !== -1, "D-pad key handling prevents default browser behavior");
 assert(js.indexOf("window.addEventListener(\"keydown\"") !== -1, "keydown is captured at window level");
 assert(js.indexOf("activeControlOrDefault") !== -1, "Enter activates the default visible control when focus is missing");
@@ -71,7 +74,7 @@ assert(manifest.icons && manifest.icons[0] && manifest.icons[0].src === "favicon
 assert(manifest.background_color === "#000000", "manifest background is black");
 assert(manifest.display === "standalone", "manifest uses standalone display");
 
-assert(serviceWorker.indexOf("rayban-walkpad-hud-v2") !== -1, "service worker cache name is current");
+assert(serviceWorker.indexOf("rayban-walkpad-hud-v4") !== -1, "service worker cache name is current");
 assert(serviceWorker.indexOf("self.skipWaiting()") !== -1, "service worker activates updated assets promptly");
 assert(serviceWorker.indexOf("self.clients.claim()") !== -1, "service worker claims clients promptly");
 ["./", "./index.html", "./styles.css", "./app.js", "./manifest.webmanifest", "./favicon.png"].forEach(function (asset) {

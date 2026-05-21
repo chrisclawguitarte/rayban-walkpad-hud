@@ -5,6 +5,7 @@
   var SENSITIVITY_KEY = "raybanWalkpadHud.sensitivity.v1";
   var GPS_FEET_PER_METER = 3.280839895;
   var STEP_WINDOWS_MS = 20000;
+  var PERMISSION_TIMEOUT_MS = 1500;
 
   var PROFILES = {
     high: {
@@ -51,6 +52,7 @@
     locationWatchId: null,
     lastMotionAt: 0,
     lastHandledKeyAt: 0,
+    sensorPermissionState: "unknown",
     historyTrapArmed: false
   };
 
@@ -300,6 +302,7 @@
     setStatus("STARTING");
     showControls();
     await requestSensorPermissions();
+    setStatus("SENSORS");
     attachSensorListeners();
     startGeolocationWatch();
 
@@ -363,16 +366,83 @@
   }
 
   async function requestSensorPermissions() {
+    var results = [];
+
     try {
-      if (window.DeviceMotionEvent && typeof window.DeviceMotionEvent.requestPermission === "function") {
-        await window.DeviceMotionEvent.requestPermission();
-      }
       if (window.DeviceOrientationEvent && typeof window.DeviceOrientationEvent.requestPermission === "function") {
-        await window.DeviceOrientationEvent.requestPermission();
+        dom.motion.textContent = "ORIENT";
+        results.push(await permissionWithTimeout(window.DeviceOrientationEvent.requestPermission(), "orient"));
+      }
+      if (window.DeviceMotionEvent && typeof window.DeviceMotionEvent.requestPermission === "function") {
+        dom.motion.textContent = "MOTION";
+        results.push(await permissionWithTimeout(window.DeviceMotionEvent.requestPermission(), "motion"));
       }
     } catch (error) {
+      state.sensorPermissionState = "limited";
       dom.motion.textContent = "LIMIT";
+      return;
     }
+
+    if (!results.length) {
+      state.sensorPermissionState = "standard";
+      return;
+    }
+
+    var hasTimeout = results.some(function (result) {
+      return result.state === "timeout";
+    });
+    var hasDenied = results.some(function (result) {
+      return result.state === "denied" || result.state === "error";
+    });
+
+    if (hasDenied) {
+      state.sensorPermissionState = "limited";
+      dom.motion.textContent = "LIMIT";
+    } else if (hasTimeout) {
+      state.sensorPermissionState = "timeout";
+      dom.motion.textContent = "WAIT";
+    } else {
+      state.sensorPermissionState = "granted";
+    }
+  }
+
+  function permissionWithTimeout(permissionPromise, label) {
+    var settled = false;
+
+    return new Promise(function (resolve) {
+      var timer = setTimeout(function () {
+        if (!settled) {
+          settled = true;
+          resolve({ label: label, state: "timeout" });
+        }
+      }, PERMISSION_TIMEOUT_MS);
+
+      Promise.resolve(permissionPromise).then(function (value) {
+        if (settled) {
+          return;
+        }
+        settled = true;
+        clearTimeout(timer);
+        resolve({ label: label, state: value || "granted" });
+      }).catch(function () {
+        if (settled) {
+          return;
+        }
+        settled = true;
+        clearTimeout(timer);
+        resolve({ label: label, state: "error" });
+      });
+    });
+  }
+
+  function sensorStateLabel(activeLabel) {
+    if (state.sensorPermissionState === "timeout") {
+      return "WAIT";
+    }
+    if (state.sensorPermissionState === "limited") {
+      return "LIMIT";
+    }
+    return activeLabel;
   }
 
   function attachSensorListeners() {
@@ -382,7 +452,7 @@
 
     if ("DeviceMotionEvent" in window) {
       window.addEventListener("devicemotion", onMotion, true);
-      dom.motion.textContent = "ON";
+      dom.motion.textContent = sensorStateLabel("ON");
     } else {
       dom.motion.textContent = "NO IMU";
     }
