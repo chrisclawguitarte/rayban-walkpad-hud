@@ -46,6 +46,7 @@ button {
 .hud-shell::after {
   content: "";
   position: absolute;
+  display: none;
   pointer-events: none;
   border-color: rgba(68, 215, 255, 0.36);
   border-style: solid;
@@ -68,8 +69,8 @@ button {
   height: 600px;
   padding: 24px;
   display: grid;
-  grid-template-rows: 38px 176px 62px 64px 36px 128px;
-  gap: 9px;
+  grid-template-rows: 40px 220px 82px 82px 72px;
+  gap: 14px;
 }
 
 .hud-shell:not(.controls-visible) .walk-hud {
@@ -115,7 +116,7 @@ button {
 }
 
 .steps-zone {
-  min-height: 176px;
+  min-height: 220px;
   display: grid;
   place-items: center;
   align-content: center;
@@ -128,7 +129,7 @@ button {
 .steps-value {
   min-width: 420px;
   color: var(--accent);
-  font-size: 122px;
+  font-size: 150px;
   font-weight: 950;
   line-height: 0.88;
   text-align: center;
@@ -147,7 +148,7 @@ button {
 }
 
 .duration-zone {
-  min-height: 62px;
+  min-height: 82px;
   display: grid;
   place-items: center;
   align-content: center;
@@ -157,7 +158,7 @@ button {
 .duration-value {
   min-width: 268px;
   color: var(--focus);
-  font-size: 50px;
+  font-size: 60px;
   font-weight: 950;
   line-height: 0.96;
   text-align: center;
@@ -175,10 +176,10 @@ button {
 }
 
 .sensor-grid {
-  min-height: 64px;
+  min-height: 82px;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
+  gap: 10px;
 }
 
 .sensor-cell,
@@ -219,17 +220,21 @@ button {
   gap: 8px;
 }
 
+.hud-shell.controls-visible .session-strip {
+  display: none;
+}
+
 .session-strip strong {
   max-width: 222px;
   font-size: 17px;
 }
 
 .control-panel {
-  min-height: 128px;
+  min-height: 72px;
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  grid-auto-rows: 52px;
-  gap: 8px;
+  grid-template-columns: repeat(4, 1fr);
+  grid-auto-rows: 56px;
+  gap: 12px;
   padding: 8px;
   border: 1px solid rgba(68, 215, 255, 0.32);
   background: rgba(0, 6, 7, 0.94);
@@ -240,7 +245,7 @@ button {
 }
 
 .control {
-  min-height: 52px;
+  min-height: 56px;
   border: 1px solid rgba(68, 215, 255, 0.42);
   border-radius: 4px;
   background: rgba(4, 20, 20, 0.96);
@@ -250,17 +255,6 @@ button {
   line-height: 1;
   text-align: center;
   text-transform: uppercase;
-}
-
-.control[data-action="start"],
-.control[data-action="pause"],
-.control[data-action="reset"] {
-  grid-column: span 2;
-}
-
-.control[data-action="sensitivity"],
-.control[data-action="hide"] {
-  grid-column: span 3;
 }
 
 .control--primary {
@@ -275,9 +269,9 @@ button {
 
 .control:focus,
 .control.is-focused {
-  outline: 3px solid var(--focus);
-  outline-offset: 2px;
-  box-shadow: 0 0 18px rgba(68, 215, 255, 0.48);
+  outline: 0;
+  border-color: var(--focus);
+  box-shadow: inset 0 -5px 0 var(--focus);
 }
 
 .is-alert {

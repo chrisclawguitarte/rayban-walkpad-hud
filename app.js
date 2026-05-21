@@ -244,12 +244,15 @@
       resetWalk();
     } else if (action === "sensitivity") {
       cycleSensitivity();
-    } else if (action === "hide") {
-      hideControls();
     }
   }
 
   async function startWalk() {
+    if (state.running) {
+      hideControls();
+      return;
+    }
+
     state.startedOnce = true;
     setStatus("STARTING");
     showControls();
@@ -471,8 +474,8 @@
   }
 
   function renderButtons() {
-    dom.startButton.textContent = state.running ? "LIVE" : currentElapsedMs() > 0 ? "RESUME" : "START";
-    dom.startButton.disabled = state.running;
+    dom.startButton.textContent = state.running ? "HIDE" : currentElapsedMs() > 0 ? "RESUME" : "START";
+    dom.startButton.disabled = false;
     dom.pauseButton.disabled = !state.running;
   }
 
@@ -611,4 +614,3 @@
 
   document.addEventListener("DOMContentLoaded", init);
 })();
-

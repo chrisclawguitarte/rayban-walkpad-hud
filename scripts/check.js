@@ -39,7 +39,6 @@ assert(html.indexOf('id="steps-value"') !== -1, "steps display is present");
 assert(html.indexOf('id="duration-value"') !== -1, "duration display is present");
 assert(html.indexOf('id="cadence-value"') !== -1, "cadence display is present");
 assert(html.indexOf('data-action="start"') !== -1, "sensor permission control is present");
-assert(html.indexOf('data-action="hide"') !== -1, "hidden controls control is present");
 assert(html.indexOf('class="focusable control') !== -1, "focusable controls are present");
 assert(html.indexOf('target="_blank"') === -1 && html.indexOf('target="_top"') === -1, "app UI does not use external navigation targets");
 
@@ -47,7 +46,7 @@ assert(css.indexOf("width: 600px") !== -1 && css.indexOf("height: 600px") !== -1
 assert(css.indexOf("overflow: hidden") !== -1, "scrolling is disabled");
 assert(css.indexOf("--bg: #000000") !== -1, "black page canvas is defined");
 assert(css.indexOf("--focus: #44d7ff") !== -1, "visible cyan focus ring is defined");
-assert(css.indexOf("min-height: 52px") !== -1, "controls have stable large targets");
+assert(css.indexOf("min-height: 56px") !== -1, "controls have stable large targets");
 assert(css.indexOf("letter-spacing: 0") !== -1, "letter spacing is not negative");
 assert(css.indexOf("font-size: 166px") !== -1, "steps are the primary HUD readout");
 assert(css.indexOf(".control-panel[hidden]") !== -1, "controls can be hidden");
@@ -58,6 +57,7 @@ assert(js.indexOf("navigator.geolocation.watchPosition") !== -1, "geolocation wa
 assert(js.indexOf("requestPermission") !== -1, "sensor permissions are user-gesture gated");
 assert(js.indexOf("event.preventDefault()") !== -1, "D-pad key handling prevents default browser behavior");
 assert(js.indexOf("Backspace") !== -1 && js.indexOf("BrowserBack") !== -1, "back controls reveal is implemented");
+assert(js.indexOf("hideControls") !== -1, "controls can be hidden after reveal");
 assert(js.indexOf("localStorage") !== -1, "lightweight localStorage cache is present");
 assert(js.indexOf("serviceWorker") !== -1, "service worker registration is present");
 assert(js.indexOf("window.open") === -1, "app does not use popup navigation");
