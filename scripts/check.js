@@ -40,6 +40,7 @@ assert(html.indexOf('id="duration-value"') !== -1, "duration display is present"
 assert(html.indexOf('id="cadence-value"') !== -1, "cadence display is present");
 assert(html.indexOf("M EVT") !== -1 && html.indexOf("O EVT") !== -1 && html.indexOf("G EVT") !== -1, "raw sensor event diagnostics are visible");
 assert(html.indexOf('id="generic-value"') !== -1, "generic sensor diagnostics are present");
+assert(html.indexOf("data-diagnostic") !== -1, "diagnostics can be hidden with controls");
 assert(html.indexOf('data-action="start"') !== -1, "sensor permission control is present");
 assert(html.indexOf('class="focusable control') !== -1, "focusable controls are present");
 assert(html.indexOf('target="_blank"') === -1 && html.indexOf('target="_top"') === -1, "app UI does not use external navigation targets");
@@ -50,8 +51,9 @@ assert(css.indexOf("--bg: #000000") !== -1, "black page canvas is defined");
 assert(css.indexOf("--focus: #44d7ff") !== -1, "visible cyan focus ring is defined");
 assert(css.indexOf("min-height: 56px") !== -1, "controls have stable large targets");
 assert(css.indexOf("letter-spacing: 0") !== -1, "letter spacing is not negative");
-assert(css.indexOf("font-size: 166px") !== -1, "steps are the primary HUD readout");
+assert(css.indexOf("font-size: 178px") !== -1, "steps are the primary HUD readout");
 assert(css.indexOf(".control-panel[hidden]") !== -1, "controls can be hidden");
+assert(css.indexOf("[hidden]") !== -1, "diagnostics hidden state is styled");
 
 assert(js.indexOf("DeviceMotionEvent") !== -1, "device motion API is used");
 assert(js.indexOf("DeviceOrientationEvent") !== -1, "device orientation API is used");
@@ -63,6 +65,7 @@ assert(js.indexOf("detectGenericStep") !== -1, "generic sensor step detection is
 assert(js.indexOf("startGenericSensors") !== -1, "generic sensors are started from the user gesture");
 assert(js.indexOf("motionEvents") !== -1 && js.indexOf("orientationEvents") !== -1 && js.indexOf("genericEvents") !== -1, "sensor event counts are tracked");
 assert(js.indexOf("renderSensorDiagnostics") !== -1, "raw sensor diagnostics are rendered");
+assert(js.indexOf("setDiagnosticsHidden") !== -1, "diagnostics hide with the control panel");
 assert(js.indexOf("activeStepSignal") !== -1, "sustained walking signal can increment steps");
 assert(js.indexOf("angularDelta") !== -1, "orientation heading deltas are normalized");
 assert(js.indexOf("requestPermission") !== -1, "sensor permissions are user-gesture gated");
@@ -88,7 +91,7 @@ assert(manifest.icons && manifest.icons[0] && manifest.icons[0].src === "favicon
 assert(manifest.background_color === "#000000", "manifest background is black");
 assert(manifest.display === "standalone", "manifest uses standalone display");
 
-assert(serviceWorker.indexOf("rayban-walkpad-hud-v10") !== -1, "service worker cache name is current");
+assert(serviceWorker.indexOf("rayban-walkpad-hud-v11") !== -1, "service worker cache name is current");
 assert(serviceWorker.indexOf("self.skipWaiting()") !== -1, "service worker activates updated assets promptly");
 assert(serviceWorker.indexOf("self.clients.claim()") !== -1, "service worker claims clients promptly");
 ["./", "./index.html", "./styles.css", "./app.js", "./manifest.webmanifest", "./favicon.png"].forEach(function (asset) {

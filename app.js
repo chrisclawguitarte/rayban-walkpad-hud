@@ -99,6 +99,7 @@
     dom.sensitivity = document.getElementById("sensitivity-value");
     dom.signal = document.getElementById("signal-value");
     dom.controlPanel = document.getElementById("control-panel");
+    dom.diagnostics = Array.prototype.slice.call(document.querySelectorAll("[data-diagnostic]"));
     dom.startButton = document.querySelector('[data-action="start"]');
     dom.pauseButton = document.querySelector('[data-action="pause"]');
 
@@ -755,6 +756,7 @@
 
   function showControls() {
     dom.controlPanel.hidden = false;
+    setDiagnosticsHidden(false);
     dom.app.classList.add("controls-visible");
     renderButtons();
     focusPreferredControl();
@@ -765,10 +767,17 @@
       return;
     }
     dom.controlPanel.hidden = true;
+    setDiagnosticsHidden(true);
     dom.app.classList.remove("controls-visible");
     if (document.activeElement && document.activeElement.classList.contains("focusable")) {
       document.activeElement.blur();
     }
+  }
+
+  function setDiagnosticsHidden(hidden) {
+    dom.diagnostics.forEach(function (diagnostic) {
+      diagnostic.hidden = hidden;
+    });
   }
 
   function renderButtons() {

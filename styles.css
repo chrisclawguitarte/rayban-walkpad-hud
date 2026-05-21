@@ -69,13 +69,13 @@ button {
   height: 600px;
   padding: 24px;
   display: grid;
-  grid-template-rows: 40px 220px 82px 82px 72px;
-  gap: 14px;
+  grid-template-rows: 40px 178px 66px 76px 42px 72px;
+  gap: 10px;
 }
 
 .hud-shell:not(.controls-visible) .walk-hud {
-  grid-template-rows: 42px 236px 86px 82px 54px;
-  gap: 10px;
+  grid-template-rows: 44px 342px 132px;
+  gap: 12px;
 }
 
 .topline {
@@ -116,7 +116,7 @@ button {
 }
 
 .steps-zone {
-  min-height: 220px;
+  min-height: 178px;
   display: grid;
   place-items: center;
   align-content: center;
@@ -127,9 +127,9 @@ button {
 }
 
 .steps-value {
-  min-width: 420px;
+  min-width: 386px;
   color: var(--accent);
-  font-size: 150px;
+  font-size: 128px;
   font-weight: 950;
   line-height: 0.88;
   text-align: center;
@@ -138,17 +138,17 @@ button {
 }
 
 .hud-shell:not(.controls-visible) .steps-zone {
-  min-height: 236px;
+  min-height: 342px;
   gap: 8px;
 }
 
 .hud-shell:not(.controls-visible) .steps-value {
   min-width: 492px;
-  font-size: 166px;
+  font-size: 178px;
 }
 
 .duration-zone {
-  min-height: 82px;
+  min-height: 66px;
   display: grid;
   place-items: center;
   align-content: center;
@@ -158,7 +158,7 @@ button {
 .duration-value {
   min-width: 268px;
   color: var(--focus);
-  font-size: 60px;
+  font-size: 48px;
   font-weight: 950;
   line-height: 0.96;
   text-align: center;
@@ -167,16 +167,16 @@ button {
 }
 
 .hud-shell:not(.controls-visible) .duration-zone {
-  min-height: 86px;
+  min-height: 132px;
 }
 
 .hud-shell:not(.controls-visible) .duration-value {
   min-width: 312px;
-  font-size: 64px;
+  font-size: 76px;
 }
 
 .sensor-grid {
-  min-height: 82px;
+  min-height: 76px;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 10px;
@@ -214,14 +214,14 @@ button {
 }
 
 .session-strip {
-  min-height: 36px;
+  min-height: 42px;
   display: grid;
   grid-template-columns: 2fr 1fr 1fr;
   gap: 8px;
 }
 
-.hud-shell.controls-visible .session-strip {
-  display: none;
+[hidden] {
+  display: none !important;
 }
 
 .session-strip strong {
