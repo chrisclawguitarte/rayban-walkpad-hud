@@ -47,7 +47,7 @@ assert(css.indexOf("width: 600px") !== -1 && css.indexOf("height: 600px") !== -1
 assert(css.indexOf("overflow: hidden") !== -1, "scrolling is disabled");
 assert(css.indexOf("--bg: #000000") !== -1, "black page canvas is defined");
 assert(css.indexOf("--focus: #44d7ff") !== -1, "visible cyan focus ring is defined");
-assert(css.indexOf("min-height: 50px") !== -1, "controls have stable large targets");
+assert(css.indexOf("min-height: 52px") !== -1, "controls have stable large targets");
 assert(css.indexOf("letter-spacing: 0") !== -1, "letter spacing is not negative");
 assert(css.indexOf("font-size: 166px") !== -1, "steps are the primary HUD readout");
 assert(css.indexOf(".control-panel[hidden]") !== -1, "controls can be hidden");

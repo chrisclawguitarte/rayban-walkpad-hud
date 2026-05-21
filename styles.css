@@ -68,6 +68,11 @@ button {
   height: 600px;
   padding: 24px;
   display: grid;
+  grid-template-rows: 38px 176px 62px 64px 36px 128px;
+  gap: 9px;
+}
+
+.hud-shell:not(.controls-visible) .walk-hud {
   grid-template-rows: 42px 236px 86px 82px 54px;
   gap: 10px;
 }
@@ -80,7 +85,7 @@ button {
 
 .status-pill,
 .clock-pill {
-  height: 38px;
+  height: 34px;
   min-width: 136px;
   display: inline-flex;
   align-items: center;
@@ -89,7 +94,7 @@ button {
   border: 1px solid rgba(71, 255, 154, 0.44);
   background: rgba(0, 15, 12, 0.84);
   color: var(--accent);
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 900;
   line-height: 1;
   text-transform: uppercase;
@@ -103,14 +108,14 @@ button {
 
 .readout-label {
   color: var(--muted);
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 900;
   line-height: 1;
   text-transform: uppercase;
 }
 
 .steps-zone {
-  min-height: 236px;
+  min-height: 176px;
   display: grid;
   place-items: center;
   align-content: center;
@@ -121,9 +126,9 @@ button {
 }
 
 .steps-value {
-  min-width: 492px;
+  min-width: 420px;
   color: var(--accent);
-  font-size: 166px;
+  font-size: 122px;
   font-weight: 950;
   line-height: 0.88;
   text-align: center;
@@ -131,8 +136,18 @@ button {
   font-variant-numeric: tabular-nums;
 }
 
+.hud-shell:not(.controls-visible) .steps-zone {
+  min-height: 236px;
+  gap: 8px;
+}
+
+.hud-shell:not(.controls-visible) .steps-value {
+  min-width: 492px;
+  font-size: 166px;
+}
+
 .duration-zone {
-  min-height: 86px;
+  min-height: 62px;
   display: grid;
   place-items: center;
   align-content: center;
@@ -140,9 +155,9 @@ button {
 }
 
 .duration-value {
-  min-width: 312px;
+  min-width: 268px;
   color: var(--focus);
-  font-size: 64px;
+  font-size: 50px;
   font-weight: 950;
   line-height: 0.96;
   text-align: center;
@@ -150,8 +165,17 @@ button {
   font-variant-numeric: tabular-nums;
 }
 
+.hud-shell:not(.controls-visible) .duration-zone {
+  min-height: 86px;
+}
+
+.hud-shell:not(.controls-visible) .duration-value {
+  min-width: 312px;
+  font-size: 64px;
+}
+
 .sensor-grid {
-  min-height: 82px;
+  min-height: 64px;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 8px;
@@ -189,7 +213,7 @@ button {
 }
 
 .session-strip {
-  min-height: 54px;
+  min-height: 36px;
   display: grid;
   grid-template-columns: 2fr 1fr 1fr;
   gap: 8px;
@@ -201,13 +225,10 @@ button {
 }
 
 .control-panel {
-  position: absolute;
-  left: 24px;
-  right: 24px;
-  bottom: 22px;
-  min-height: 66px;
+  min-height: 128px;
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(6, 1fr);
+  grid-auto-rows: 52px;
   gap: 8px;
   padding: 8px;
   border: 1px solid rgba(68, 215, 255, 0.32);
@@ -219,16 +240,27 @@ button {
 }
 
 .control {
-  min-height: 50px;
+  min-height: 52px;
   border: 1px solid rgba(68, 215, 255, 0.42);
   border-radius: 4px;
   background: rgba(4, 20, 20, 0.96);
   color: var(--text);
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 900;
   line-height: 1;
   text-align: center;
   text-transform: uppercase;
+}
+
+.control[data-action="start"],
+.control[data-action="pause"],
+.control[data-action="reset"] {
+  grid-column: span 2;
+}
+
+.control[data-action="sensitivity"],
+.control[data-action="hide"] {
+  grid-column: span 3;
 }
 
 .control--primary {
@@ -237,8 +269,8 @@ button {
 }
 
 .control:disabled {
-  color: rgba(244, 255, 251, 0.36);
-  border-color: rgba(244, 255, 251, 0.16);
+  color: rgba(244, 255, 251, 0.62);
+  border-color: rgba(244, 255, 251, 0.26);
 }
 
 .control:focus,
@@ -255,4 +287,3 @@ button {
 .is-danger {
   color: var(--danger);
 }
-
