@@ -3,10 +3,8 @@
 
   var SESSION_KEY = "raybanWalkpadHud.lastSession.v1";
   var SENSITIVITY_KEY = "raybanWalkpadHud.sensitivity.v1";
-  var GPS_FEET_PER_METER = 3.280839895;
   var STEP_WINDOWS_MS = 20000;
   var PERMISSION_TIMEOUT_MS = 1500;
-  var ESTIMATE_FALLBACK_MS = 5000;
 
   var PROFILES = {
     high: {
@@ -19,7 +17,6 @@
       orientationMin: 0.70,
       orientationMax: 6.5,
       orientationNoise: 0.55,
-      estimateCadence: 125,
       minInterval: 300
     },
     normal: {
@@ -32,7 +29,6 @@
       orientationMin: 1.15,
       orientationMax: 8.5,
       orientationNoise: 0.70,
-      estimateCadence: 110,
       minInterval: 360
     },
     low: {
@@ -45,7 +41,6 @@
       orientationMin: 2.00,
       orientationMax: 11.0,
       orientationNoise: 0.90,
-      estimateCadence: 95,
       minInterval: 420
     }
   };
@@ -70,7 +65,15 @@
     lastOrientationAt: 0,
     sensitivity: readSensitivity(),
     listenersAttached: false,
-    locationWatchId: null,
+    genericSensorAttempted: false,
+    genericSensor: null,
+    genericSensorName: "",
+    genericEvents: 0,
+    genericGravityMagnitude: null,
+    genericFilteredSignal: 0,
+    genericPreviousSignal: 0,
+    genericNoise: 0,
+    lastGenericAt: 0,
     lastMotionAt: 0,
     lastHandledKeyAt: 0,
     sensorPermissionState: "unknown",
@@ -79,8 +82,6 @@
     lastMagnitude: null,
     lastStepSignal: null,
     lastStepSource: "",
-    estimateActive: false,
-    estimatedSteps: 0,
     historyTrapArmed: false
   };
 
@@ -93,7 +94,7 @@
     dom.cadence = document.getElementById("cadence-value");
     dom.motion = document.getElementById("motion-value");
     dom.orientation = document.getElementById("orientation-value");
-    dom.gps = document.getElementById("gps-value");
+    dom.generic = document.getElementById("generic-value");
     dom.lastSession = document.getElementById("last-session");
     dom.sensitivity = document.getElementById("sensitivity-value");
     dom.signal = document.getElementById("signal-value");
@@ -333,7 +334,6 @@
     await requestSensorPermissions();
     setStatus("SENSORS");
     attachSensorListeners();
-    startGeolocationWatch();
 
     if (!state.running) {
       state.sessionStartedAt = Date.now() - state.elapsedBeforeStart;
@@ -379,14 +379,19 @@
     state.previousOrientationSignal = 0;
     state.orientationNoise = 0;
     state.lastOrientationAt = 0;
+    state.genericEvents = 0;
+    state.genericGravityMagnitude = null;
+    state.genericFilteredSignal = 0;
+    state.genericPreviousSignal = 0;
+    state.genericNoise = 0;
+    state.lastGenericAt = 0;
     state.motionEvents = 0;
     state.orientationEvents = 0;
     state.lastMagnitude = null;
     state.lastStepSignal = null;
     state.lastStepSource = "";
-    state.estimateActive = false;
-    state.estimatedSteps = 0;
     setStatus("READY");
+    renderSensorResetState();
     renderLastSession();
     renderSession();
     renderButtons();
@@ -506,24 +511,63 @@
       dom.orientation.textContent = "NO IMU";
     }
 
+    startGenericSensors();
     state.listenersAttached = true;
   }
 
-  function startGeolocationWatch() {
-    if (!("geolocation" in navigator)) {
-      dom.gps.textContent = "NO GPS";
+  function startGenericSensors() {
+    if (state.genericSensorAttempted) {
       return;
     }
 
-    if (state.locationWatchId !== null) {
-      navigator.geolocation.clearWatch(state.locationWatchId);
+    state.genericSensorAttempted = true;
+    var candidates = [
+      { name: "LIN", constructorName: "LinearAccelerationSensor" },
+      { name: "ACC", constructorName: "Accelerometer" }
+    ];
+
+    startNextGenericSensor(candidates, 0);
+  }
+
+  function startNextGenericSensor(candidates, index) {
+    if (index >= candidates.length) {
+      if (dom.generic && state.genericEvents === 0) {
+        dom.generic.textContent = "NO GEN";
+      }
+      return;
     }
 
-    state.locationWatchId = navigator.geolocation.watchPosition(onPosition, onPositionError, {
-      enableHighAccuracy: true,
-      maximumAge: 5000,
-      timeout: 15000
-    });
+    var candidate = candidates[index];
+    var SensorConstructor = window[candidate.constructorName];
+    if (typeof SensorConstructor !== "function") {
+      startNextGenericSensor(candidates, index + 1);
+      return;
+    }
+
+    try {
+      var sensor = new SensorConstructor({ frequency: 30 });
+      state.genericSensor = sensor;
+      state.genericSensorName = candidate.name;
+      dom.generic.textContent = candidate.name + " 0";
+
+      sensor.addEventListener("reading", function () {
+        onGenericSensorReading(sensor, candidate.name);
+      });
+      sensor.addEventListener("error", function () {
+        if (state.genericSensor === sensor && state.genericEvents === 0) {
+          state.genericSensor = null;
+          state.genericSensorName = "";
+          startNextGenericSensor(candidates, index + 1);
+        } else if (dom.generic) {
+          dom.generic.textContent = "ERR";
+        }
+      });
+      sensor.start();
+    } catch (error) {
+      state.genericSensor = null;
+      state.genericSensorName = "";
+      startNextGenericSensor(candidates, index + 1);
+    }
   }
 
   function onMotion(event) {
@@ -563,8 +607,16 @@
   }
 
   function detectMotionStep(now, strength) {
+    detectAccelerationStep(now, strength, state.noise);
+  }
+
+  function detectGenericStep(now, strength) {
+    detectAccelerationStep(now, strength, state.genericNoise);
+  }
+
+  function detectAccelerationStep(now, strength, noise) {
     var profile = PROFILES[state.sensitivity] || PROFILES.normal;
-    var threshold = clamp(profile.base + state.noise * profile.noise, profile.min, profile.max);
+    var threshold = clamp(profile.base + noise * profile.noise, profile.min, profile.max);
     var activeStepSignal = strength > threshold;
     var enoughTime = now - state.lastStepAt > profile.minInterval;
 
@@ -593,7 +645,6 @@
   }
 
   function recordStep(now) {
-    syncEstimatedSteps();
     state.steps += 1;
     state.lastStepAt = now;
     state.recentSteps.push(now);
@@ -644,26 +695,62 @@
     state.lastOrientationVector = current;
   }
 
+  function onGenericSensorReading(sensor, label) {
+    state.genericEvents += 1;
+    state.lastGenericAt = Date.now();
+    state.genericSensorName = label;
+    renderSensorDiagnostics();
+
+    var vector = sensorVector(sensor);
+    if (!vector) {
+      if (dom.generic) {
+        dom.generic.textContent = "NO VEC";
+      }
+      return;
+    }
+
+    if (!state.running) {
+      return;
+    }
+
+    var magnitude = Math.sqrt(vector.x * vector.x + vector.y * vector.y + vector.z * vector.z);
+    if (state.genericGravityMagnitude === null) {
+      state.genericGravityMagnitude = magnitude;
+    }
+
+    state.genericGravityMagnitude = state.genericGravityMagnitude * 0.94 + magnitude * 0.06;
+    var signal = magnitude - state.genericGravityMagnitude;
+    state.genericFilteredSignal = state.genericFilteredSignal * 0.70 + signal * 0.30;
+    state.genericNoise = state.genericNoise * 0.96 + Math.abs(state.genericFilteredSignal) * 0.04;
+
+    var strength = Math.abs(state.genericFilteredSignal);
+    state.lastMagnitude = magnitude;
+    state.lastStepSignal = strength;
+    state.lastStepSource = "G";
+    detectGenericStep(state.lastGenericAt, strength);
+    state.genericPreviousSignal = strength;
+    renderSignal();
+    renderSensorDiagnostics();
+  }
+
+  function sensorVector(sensor) {
+    if (!sensor ||
+        !isFiniteNumber(sensor.x) ||
+        !isFiniteNumber(sensor.y) ||
+        !isFiniteNumber(sensor.z)) {
+      return null;
+    }
+
+    return {
+      x: sensor.x,
+      y: sensor.y,
+      z: sensor.z
+    };
+  }
+
   function angularDelta(a, b) {
     var delta = Math.abs(a - b) % 360;
     return delta > 180 ? 360 - delta : delta;
-  }
-
-  function onPosition(position) {
-    var coords = position.coords;
-    if (coords && typeof coords.accuracy === "number") {
-      dom.gps.textContent = "+/-" + Math.round(coords.accuracy * GPS_FEET_PER_METER) + "FT";
-    } else {
-      dom.gps.textContent = "FIX";
-    }
-  }
-
-  function onPositionError(error) {
-    if (error && error.code === error.PERMISSION_DENIED) {
-      dom.gps.textContent = "DENIED";
-    } else {
-      dom.gps.textContent = "WAIT";
-    }
   }
 
   function showControls() {
@@ -692,14 +779,9 @@
 
   function renderSession() {
     var elapsed = currentElapsedMs();
-    var steps = displayStepCount(elapsed);
-    dom.steps.textContent = formatSteps(steps);
+    dom.steps.textContent = formatSteps(state.steps);
     dom.duration.textContent = formatDuration(elapsed);
     dom.cadence.textContent = formatCadence();
-    if (state.running && state.estimateActive) {
-      setStatus("EST");
-      renderSignal();
-    }
     renderButtons();
   }
 
@@ -714,10 +796,6 @@
   }
 
   function renderSignal() {
-    if (state.estimateActive) {
-      dom.signal.textContent = "EST " + currentProfile().estimateCadence;
-      return;
-    }
     if (state.lastStepSignal === null) {
       dom.signal.textContent = "--";
       return;
@@ -731,6 +809,28 @@
     }
     if (dom.orientation && state.orientationEvents > 0) {
       dom.orientation.textContent = "O " + formatCount(state.orientationEvents);
+    }
+    if (dom.generic && state.genericEvents > 0) {
+      dom.generic.textContent = "G " + formatCount(state.genericEvents);
+    }
+    renderSignal();
+  }
+
+  function renderSensorResetState() {
+    if (dom.motion) {
+      dom.motion.textContent = state.listenersAttached ? sensorStateLabel("M 0") : "WAIT";
+    }
+    if (dom.orientation) {
+      dom.orientation.textContent = state.listenersAttached ? "O 0" : "--";
+    }
+    if (dom.generic) {
+      if (state.genericSensorName) {
+        dom.generic.textContent = state.genericSensorName + " 0";
+      } else if (state.genericSensorAttempted) {
+        dom.generic.textContent = "NO GEN";
+      } else {
+        dom.generic.textContent = "--";
+      }
     }
     renderSignal();
   }
@@ -763,7 +863,7 @@
 
   function saveLastSession() {
     var durationMs = currentElapsedMs();
-    var steps = displayStepCount(durationMs);
+    var steps = state.steps;
     if (durationMs < 1000 && steps === 0) {
       return;
     }
@@ -771,17 +871,12 @@
     localStorage.setItem(SESSION_KEY, JSON.stringify({
       steps: steps,
       durationMs: durationMs,
-      estimated: state.estimateActive,
       endedAt: new Date().toISOString()
     }));
     renderLastSession();
   }
 
   function formatCadence() {
-    if (state.estimateActive) {
-      return currentProfile().estimateCadence + " EST";
-    }
-
     var now = Date.now();
     pruneRecentSteps(now);
     if (state.recentSteps.length < 2) {
@@ -796,34 +891,6 @@
     }
 
     return Math.round((state.recentSteps.length - 1) / minutes) + " SPM";
-  }
-
-  function displayStepCount(elapsedMs) {
-    if (shouldUseEstimate(elapsedMs)) {
-      state.estimateActive = true;
-      state.estimatedSteps = Math.max(state.estimatedSteps, estimatedStepCount(elapsedMs));
-      return Math.max(state.steps, state.estimatedSteps);
-    }
-
-    state.estimateActive = false;
-    return state.steps;
-  }
-
-  function shouldUseEstimate(elapsedMs) {
-    return state.running &&
-      elapsedMs >= ESTIMATE_FALLBACK_MS &&
-      (state.estimateActive || state.steps === 0);
-  }
-
-  function estimatedStepCount(elapsedMs) {
-    return Math.floor((elapsedMs / 60000) * currentProfile().estimateCadence);
-  }
-
-  function syncEstimatedSteps() {
-    if (state.estimateActive) {
-      state.steps = Math.max(state.steps, state.estimatedSteps);
-      state.estimateActive = false;
-    }
   }
 
   function currentProfile() {
@@ -878,6 +945,10 @@
   function readSensitivity() {
     var value = localStorage.getItem(SENSITIVITY_KEY);
     return PROFILES[value] ? value : "normal";
+  }
+
+  function isFiniteNumber(value) {
+    return typeof value === "number" && isFinite(value);
   }
 
   function clamp(value, min, max) {

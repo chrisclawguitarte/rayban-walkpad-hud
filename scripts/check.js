@@ -38,7 +38,8 @@ assert(html.indexOf('rel="icon" href="favicon.png"') !== -1, "favicon is linked"
 assert(html.indexOf('id="steps-value"') !== -1, "steps display is present");
 assert(html.indexOf('id="duration-value"') !== -1, "duration display is present");
 assert(html.indexOf('id="cadence-value"') !== -1, "cadence display is present");
-assert(html.indexOf("M EVT") !== -1 && html.indexOf("O EVT") !== -1, "raw sensor event diagnostics are visible");
+assert(html.indexOf("M EVT") !== -1 && html.indexOf("O EVT") !== -1 && html.indexOf("G EVT") !== -1, "raw sensor event diagnostics are visible");
+assert(html.indexOf('id="generic-value"') !== -1, "generic sensor diagnostics are present");
 assert(html.indexOf('data-action="start"') !== -1, "sensor permission control is present");
 assert(html.indexOf('class="focusable control') !== -1, "focusable controls are present");
 assert(html.indexOf('target="_blank"') === -1 && html.indexOf('target="_top"') === -1, "app UI does not use external navigation targets");
@@ -54,20 +55,22 @@ assert(css.indexOf(".control-panel[hidden]") !== -1, "controls can be hidden");
 
 assert(js.indexOf("DeviceMotionEvent") !== -1, "device motion API is used");
 assert(js.indexOf("DeviceOrientationEvent") !== -1, "device orientation API is used");
+assert(js.indexOf("LinearAccelerationSensor") !== -1, "linear acceleration Generic Sensor API is attempted");
+assert(js.indexOf("Accelerometer") !== -1, "accelerometer Generic Sensor API is attempted");
 assert(js.indexOf("detectMotionStep") !== -1, "motion-based step detection is present");
 assert(js.indexOf("detectOrientationStep") !== -1, "orientation-based fallback step detection is present");
-assert(js.indexOf("motionEvents") !== -1 && js.indexOf("orientationEvents") !== -1, "sensor event counts are tracked");
+assert(js.indexOf("detectGenericStep") !== -1, "generic sensor step detection is present");
+assert(js.indexOf("startGenericSensors") !== -1, "generic sensors are started from the user gesture");
+assert(js.indexOf("motionEvents") !== -1 && js.indexOf("orientationEvents") !== -1 && js.indexOf("genericEvents") !== -1, "sensor event counts are tracked");
 assert(js.indexOf("renderSensorDiagnostics") !== -1, "raw sensor diagnostics are rendered");
 assert(js.indexOf("activeStepSignal") !== -1, "sustained walking signal can increment steps");
 assert(js.indexOf("angularDelta") !== -1, "orientation heading deltas are normalized");
-assert(js.indexOf("navigator.geolocation.watchPosition") !== -1, "geolocation watch is used");
 assert(js.indexOf("requestPermission") !== -1, "sensor permissions are user-gesture gated");
 assert(js.indexOf("PERMISSION_TIMEOUT_MS") !== -1, "sensor permission requests are time-boxed");
 assert(js.indexOf("permissionWithTimeout") !== -1, "hanging sensor permissions cannot block start");
-assert(js.indexOf("ESTIMATE_FALLBACK_MS") !== -1, "sensorless fallback starts after a short delay");
-assert(js.indexOf("estimatedStepCount") !== -1, "sensorless step estimate is implemented");
-assert(js.indexOf("EST ") !== -1, "estimated mode is labeled in the UI");
-assert(js.indexOf("(state.estimateActive || state.steps === 0)") !== -1, "estimate continues until real steps are detected");
+assert(js.indexOf("estimateActive") === -1, "estimated-step mode is removed");
+assert(js.indexOf("estimatedStepCount") === -1, "sensorless step estimates are removed");
+assert(js.indexOf("EST ") === -1, "estimated mode label is removed");
 assert(js.indexOf("DeviceOrientationEvent.requestPermission") < js.indexOf("DeviceMotionEvent.requestPermission"), "orientation permission is requested before motion permission");
 assert(js.indexOf("event.preventDefault()") !== -1, "D-pad key handling prevents default browser behavior");
 assert(js.indexOf("window.addEventListener(\"keydown\"") !== -1, "keydown is captured at window level");
@@ -85,7 +88,7 @@ assert(manifest.icons && manifest.icons[0] && manifest.icons[0].src === "favicon
 assert(manifest.background_color === "#000000", "manifest background is black");
 assert(manifest.display === "standalone", "manifest uses standalone display");
 
-assert(serviceWorker.indexOf("rayban-walkpad-hud-v9") !== -1, "service worker cache name is current");
+assert(serviceWorker.indexOf("rayban-walkpad-hud-v10") !== -1, "service worker cache name is current");
 assert(serviceWorker.indexOf("self.skipWaiting()") !== -1, "service worker activates updated assets promptly");
 assert(serviceWorker.indexOf("self.clients.claim()") !== -1, "service worker claims clients promptly");
 ["./", "./index.html", "./styles.css", "./app.js", "./manifest.webmanifest", "./favicon.png"].forEach(function (asset) {

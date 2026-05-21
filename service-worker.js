@@ -1,4 +1,4 @@
-var CACHE_NAME = "rayban-walkpad-hud-v9";
+var CACHE_NAME = "rayban-walkpad-hud-v10";
 var STATIC_ASSETS = [
   "./",
   "./index.html",
