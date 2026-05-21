@@ -50,6 +50,7 @@
     listenersAttached: false,
     locationWatchId: null,
     lastMotionAt: 0,
+    lastHandledKeyAt: 0,
     historyTrapArmed: false
   };
 
@@ -99,29 +100,43 @@
   }
 
   function bindDpadNavigation() {
-    document.addEventListener("keydown", function (event) {
+    window.addEventListener("keydown", handleNavigationKey, true);
+    window.addEventListener("keyup", function (event) {
       var key = event.key;
-
-      if (key === "ArrowUp" || key === "ArrowDown" || key === "ArrowLeft" || key === "ArrowRight") {
-        event.preventDefault();
-        moveFocus(key);
+      var activationKey = key === "Enter" || key === " " || key === "Spacebar";
+      if (!activationKey || Date.now() - state.lastHandledKeyAt < 180) {
         return;
       }
+      handleNavigationKey(event);
+    }, true);
+  }
 
-      if (key === "Enter" || key === " ") {
-        var target = document.activeElement;
-        if (target && target.classList.contains("focusable")) {
-          event.preventDefault();
-          target.click();
-        }
-        return;
-      }
+  function handleNavigationKey(event) {
+    var key = event.key;
 
-      if (key === "Escape" || key === "Backspace" || key === "BrowserBack") {
+    if (key === "ArrowUp" || key === "ArrowDown" || key === "ArrowLeft" || key === "ArrowRight") {
+      event.preventDefault();
+      state.lastHandledKeyAt = Date.now();
+      showControls();
+      moveFocus(key);
+      return;
+    }
+
+    if (key === "Enter" || key === " " || key === "Spacebar") {
+      var target = activeControlOrDefault();
+      if (target) {
         event.preventDefault();
-        showControls();
+        state.lastHandledKeyAt = Date.now();
+        activateControl(target);
       }
-    });
+      return;
+    }
+
+    if (key === "Escape" || key === "Backspace" || key === "BrowserBack") {
+      event.preventDefault();
+      state.lastHandledKeyAt = Date.now();
+      showControls();
+    }
   }
 
   function installBackReveal() {
@@ -228,11 +243,39 @@
   }
 
   function focusPreferredControl() {
-    var preferred = document.querySelector("[data-preferred-focus]") || document.querySelector(".focusable");
+    var preferred = firstVisibleControl("[data-preferred-focus]") || firstVisibleControl(".focusable");
     if (preferred) {
       preferred.focus();
       updateFocusClass(preferred);
     }
+  }
+
+  function activeControlOrDefault() {
+    var active = document.activeElement;
+    if (active && active.classList.contains("focusable") && isVisible(active) && !active.disabled) {
+      return active;
+    }
+    return firstVisibleControl("[data-preferred-focus]") || firstVisibleControl(".focusable");
+  }
+
+  function firstVisibleControl(selector) {
+    var controls = Array.prototype.slice.call(document.querySelectorAll(selector));
+    for (var index = 0; index < controls.length; index += 1) {
+      if (isVisible(controls[index]) && !controls[index].disabled) {
+        return controls[index];
+      }
+    }
+    return null;
+  }
+
+  function isVisible(element) {
+    return !!(element && element.offsetParent !== null);
+  }
+
+  function activateControl(control) {
+    updateFocusClass(control);
+    control.focus();
+    handleAction(control.getAttribute("data-action"));
   }
 
   function handleAction(action) {

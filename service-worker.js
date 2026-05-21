@@ -1,4 +1,4 @@
-var CACHE_NAME = "rayban-walkpad-hud-v1";
+var CACHE_NAME = "rayban-walkpad-hud-v2";
 var STATIC_ASSETS = [
   "./",
   "./index.html",
@@ -14,6 +14,7 @@ self.addEventListener("install", function (event) {
       return cache.addAll(STATIC_ASSETS);
     })
   );
+  self.skipWaiting();
 });
 
 self.addEventListener("activate", function (event) {
@@ -27,6 +28,7 @@ self.addEventListener("activate", function (event) {
       }));
     })
   );
+  self.clients.claim();
 });
 
 self.addEventListener("fetch", function (event) {
@@ -40,4 +42,3 @@ self.addEventListener("fetch", function (event) {
     })
   );
 });
-
