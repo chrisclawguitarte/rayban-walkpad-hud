@@ -64,6 +64,10 @@ assert(js.indexOf("navigator.geolocation.watchPosition") !== -1, "geolocation wa
 assert(js.indexOf("requestPermission") !== -1, "sensor permissions are user-gesture gated");
 assert(js.indexOf("PERMISSION_TIMEOUT_MS") !== -1, "sensor permission requests are time-boxed");
 assert(js.indexOf("permissionWithTimeout") !== -1, "hanging sensor permissions cannot block start");
+assert(js.indexOf("ESTIMATE_FALLBACK_MS") !== -1, "sensorless fallback starts after a short delay");
+assert(js.indexOf("estimatedStepCount") !== -1, "sensorless step estimate is implemented");
+assert(js.indexOf("EST ") !== -1, "estimated mode is labeled in the UI");
+assert(js.indexOf("(state.estimateActive || state.steps === 0)") !== -1, "estimate continues until real steps are detected");
 assert(js.indexOf("DeviceOrientationEvent.requestPermission") < js.indexOf("DeviceMotionEvent.requestPermission"), "orientation permission is requested before motion permission");
 assert(js.indexOf("event.preventDefault()") !== -1, "D-pad key handling prevents default browser behavior");
 assert(js.indexOf("window.addEventListener(\"keydown\"") !== -1, "keydown is captured at window level");
@@ -81,7 +85,7 @@ assert(manifest.icons && manifest.icons[0] && manifest.icons[0].src === "favicon
 assert(manifest.background_color === "#000000", "manifest background is black");
 assert(manifest.display === "standalone", "manifest uses standalone display");
 
-assert(serviceWorker.indexOf("rayban-walkpad-hud-v7") !== -1, "service worker cache name is current");
+assert(serviceWorker.indexOf("rayban-walkpad-hud-v9") !== -1, "service worker cache name is current");
 assert(serviceWorker.indexOf("self.skipWaiting()") !== -1, "service worker activates updated assets promptly");
 assert(serviceWorker.indexOf("self.clients.claim()") !== -1, "service worker claims clients promptly");
 ["./", "./index.html", "./styles.css", "./app.js", "./manifest.webmanifest", "./favicon.png"].forEach(function (asset) {

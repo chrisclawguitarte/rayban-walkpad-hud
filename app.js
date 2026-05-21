@@ -6,6 +6,7 @@
   var GPS_FEET_PER_METER = 3.280839895;
   var STEP_WINDOWS_MS = 20000;
   var PERMISSION_TIMEOUT_MS = 1500;
+  var ESTIMATE_FALLBACK_MS = 5000;
 
   var PROFILES = {
     high: {
@@ -18,6 +19,7 @@
       orientationMin: 0.70,
       orientationMax: 6.5,
       orientationNoise: 0.55,
+      estimateCadence: 125,
       minInterval: 300
     },
     normal: {
@@ -30,6 +32,7 @@
       orientationMin: 1.15,
       orientationMax: 8.5,
       orientationNoise: 0.70,
+      estimateCadence: 110,
       minInterval: 360
     },
     low: {
@@ -42,6 +45,7 @@
       orientationMin: 2.00,
       orientationMax: 11.0,
       orientationNoise: 0.90,
+      estimateCadence: 95,
       minInterval: 420
     }
   };
@@ -75,6 +79,8 @@
     lastMagnitude: null,
     lastStepSignal: null,
     lastStepSource: "",
+    estimateActive: false,
+    estimatedSteps: 0,
     historyTrapArmed: false
   };
 
@@ -378,6 +384,8 @@
     state.lastMagnitude = null;
     state.lastStepSignal = null;
     state.lastStepSource = "";
+    state.estimateActive = false;
+    state.estimatedSteps = 0;
     setStatus("READY");
     renderLastSession();
     renderSession();
@@ -585,6 +593,7 @@
   }
 
   function recordStep(now) {
+    syncEstimatedSteps();
     state.steps += 1;
     state.lastStepAt = now;
     state.recentSteps.push(now);
@@ -683,9 +692,14 @@
 
   function renderSession() {
     var elapsed = currentElapsedMs();
-    dom.steps.textContent = formatSteps(state.steps);
+    var steps = displayStepCount(elapsed);
+    dom.steps.textContent = formatSteps(steps);
     dom.duration.textContent = formatDuration(elapsed);
     dom.cadence.textContent = formatCadence();
+    if (state.running && state.estimateActive) {
+      setStatus("EST");
+      renderSignal();
+    }
     renderButtons();
   }
 
@@ -700,6 +714,10 @@
   }
 
   function renderSignal() {
+    if (state.estimateActive) {
+      dom.signal.textContent = "EST " + currentProfile().estimateCadence;
+      return;
+    }
     if (state.lastStepSignal === null) {
       dom.signal.textContent = "--";
       return;
@@ -725,7 +743,7 @@
   }
 
   function renderSensitivity() {
-    dom.sensitivity.textContent = (PROFILES[state.sensitivity] || PROFILES.normal).label;
+    dom.sensitivity.textContent = currentProfile().label;
   }
 
   function renderLastSession() {
@@ -745,19 +763,25 @@
 
   function saveLastSession() {
     var durationMs = currentElapsedMs();
-    if (durationMs < 1000 && state.steps === 0) {
+    var steps = displayStepCount(durationMs);
+    if (durationMs < 1000 && steps === 0) {
       return;
     }
 
     localStorage.setItem(SESSION_KEY, JSON.stringify({
-      steps: state.steps,
+      steps: steps,
       durationMs: durationMs,
+      estimated: state.estimateActive,
       endedAt: new Date().toISOString()
     }));
     renderLastSession();
   }
 
   function formatCadence() {
+    if (state.estimateActive) {
+      return currentProfile().estimateCadence + " EST";
+    }
+
     var now = Date.now();
     pruneRecentSteps(now);
     if (state.recentSteps.length < 2) {
@@ -772,6 +796,38 @@
     }
 
     return Math.round((state.recentSteps.length - 1) / minutes) + " SPM";
+  }
+
+  function displayStepCount(elapsedMs) {
+    if (shouldUseEstimate(elapsedMs)) {
+      state.estimateActive = true;
+      state.estimatedSteps = Math.max(state.estimatedSteps, estimatedStepCount(elapsedMs));
+      return Math.max(state.steps, state.estimatedSteps);
+    }
+
+    state.estimateActive = false;
+    return state.steps;
+  }
+
+  function shouldUseEstimate(elapsedMs) {
+    return state.running &&
+      elapsedMs >= ESTIMATE_FALLBACK_MS &&
+      (state.estimateActive || state.steps === 0);
+  }
+
+  function estimatedStepCount(elapsedMs) {
+    return Math.floor((elapsedMs / 60000) * currentProfile().estimateCadence);
+  }
+
+  function syncEstimatedSteps() {
+    if (state.estimateActive) {
+      state.steps = Math.max(state.steps, state.estimatedSteps);
+      state.estimateActive = false;
+    }
+  }
+
+  function currentProfile() {
+    return PROFILES[state.sensitivity] || PROFILES.normal;
   }
 
   function pruneRecentSteps(now) {

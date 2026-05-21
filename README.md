@@ -4,14 +4,15 @@ A full-screen 600x600 Meta Ray-Ban Display web app for walking-pad sessions at a
 
 The app is static HTML/CSS/JavaScript for GitHub Pages. It uses:
 
-- DeviceMotionEvent acceleration to estimate steps from head/body motion
-- DeviceOrientationEvent to monitor orientation/tilt while walking
+- DeviceMotionEvent acceleration to estimate steps from head/body motion when IMU events are available
+- DeviceOrientationEvent to monitor orientation/tilt while walking when orientation events are available
+- Automatic estimated-step fallback from elapsed time and cadence when the glasses WebView does not emit IMU events
 - navigator.geolocation.watchPosition for paired-phone GPS status
 - D-pad keyboard handling for Meta Neural Band and Cap Touch input
 - Browser Back, Escape, and Backspace as controls-reveal fallbacks
 - A fixed 600x600 canvas with no scrolling
 
-Step counts are sensor estimates from the browser IMU, not a medical-grade pedometer. Walking pads are stationary, so GPS is shown only as a sensor health signal and is not used for step totals.
+Step counts are estimates, not a medical-grade pedometer. The app uses browser IMU events when they flow on-device. If `M EVT` and `O EVT` stay at zero, it falls back to cadence-based estimated steps and marks the session `EST`. Walking pads are stationary, so GPS is shown only as a sensor health signal and is not used for step totals.
 
 ## Run Locally
 
@@ -42,4 +43,3 @@ Public URL:
 ~~~text
 https://chrisclawguitarte.github.io/rayban-walkpad-hud/
 ~~~
-
