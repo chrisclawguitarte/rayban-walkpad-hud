@@ -38,6 +38,7 @@ assert(html.indexOf('rel="icon" href="favicon.png"') !== -1, "favicon is linked"
 assert(html.indexOf('id="steps-value"') !== -1, "steps display is present");
 assert(html.indexOf('id="duration-value"') !== -1, "duration display is present");
 assert(html.indexOf('id="cadence-value"') !== -1, "cadence display is present");
+assert(html.indexOf("M EVT") !== -1 && html.indexOf("O EVT") !== -1, "raw sensor event diagnostics are visible");
 assert(html.indexOf('data-action="start"') !== -1, "sensor permission control is present");
 assert(html.indexOf('class="focusable control') !== -1, "focusable controls are present");
 assert(html.indexOf('target="_blank"') === -1 && html.indexOf('target="_top"') === -1, "app UI does not use external navigation targets");
@@ -55,6 +56,8 @@ assert(js.indexOf("DeviceMotionEvent") !== -1, "device motion API is used");
 assert(js.indexOf("DeviceOrientationEvent") !== -1, "device orientation API is used");
 assert(js.indexOf("detectMotionStep") !== -1, "motion-based step detection is present");
 assert(js.indexOf("detectOrientationStep") !== -1, "orientation-based fallback step detection is present");
+assert(js.indexOf("motionEvents") !== -1 && js.indexOf("orientationEvents") !== -1, "sensor event counts are tracked");
+assert(js.indexOf("renderSensorDiagnostics") !== -1, "raw sensor diagnostics are rendered");
 assert(js.indexOf("activeStepSignal") !== -1, "sustained walking signal can increment steps");
 assert(js.indexOf("angularDelta") !== -1, "orientation heading deltas are normalized");
 assert(js.indexOf("navigator.geolocation.watchPosition") !== -1, "geolocation watch is used");
@@ -78,7 +81,7 @@ assert(manifest.icons && manifest.icons[0] && manifest.icons[0].src === "favicon
 assert(manifest.background_color === "#000000", "manifest background is black");
 assert(manifest.display === "standalone", "manifest uses standalone display");
 
-assert(serviceWorker.indexOf("rayban-walkpad-hud-v6") !== -1, "service worker cache name is current");
+assert(serviceWorker.indexOf("rayban-walkpad-hud-v7") !== -1, "service worker cache name is current");
 assert(serviceWorker.indexOf("self.skipWaiting()") !== -1, "service worker activates updated assets promptly");
 assert(serviceWorker.indexOf("self.clients.claim()") !== -1, "service worker claims clients promptly");
 ["./", "./index.html", "./styles.css", "./app.js", "./manifest.webmanifest", "./favicon.png"].forEach(function (asset) {

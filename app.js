@@ -70,6 +70,11 @@
     lastMotionAt: 0,
     lastHandledKeyAt: 0,
     sensorPermissionState: "unknown",
+    motionEvents: 0,
+    orientationEvents: 0,
+    lastMagnitude: null,
+    lastStepSignal: null,
+    lastStepSource: "",
     historyTrapArmed: false
   };
 
@@ -94,6 +99,7 @@
     renderLastSession();
     renderSensitivity();
     renderSession();
+    renderSensorDiagnostics();
     bindControls();
     bindDpadNavigation();
     installBackReveal();
@@ -367,6 +373,11 @@
     state.previousOrientationSignal = 0;
     state.orientationNoise = 0;
     state.lastOrientationAt = 0;
+    state.motionEvents = 0;
+    state.orientationEvents = 0;
+    state.lastMagnitude = null;
+    state.lastStepSignal = null;
+    state.lastStepSource = "";
     setStatus("READY");
     renderLastSession();
     renderSession();
@@ -474,7 +485,7 @@
 
     if ("DeviceMotionEvent" in window) {
       window.addEventListener("devicemotion", onMotion, true);
-      dom.motion.textContent = sensorStateLabel("ON");
+      dom.motion.textContent = sensorStateLabel("M 0");
     } else {
       dom.motion.textContent = "NO IMU";
     }
@@ -482,7 +493,7 @@
     if ("DeviceOrientationEvent" in window) {
       window.addEventListener("deviceorientation", onOrientation, true);
       window.addEventListener("deviceorientationabsolute", onOrientation, true);
-      dom.orientation.textContent = "ON";
+      dom.orientation.textContent = "O 0";
     } else {
       dom.orientation.textContent = "NO IMU";
     }
@@ -508,14 +519,16 @@
   }
 
   function onMotion(event) {
+    state.motionEvents += 1;
     var vector = event.accelerationIncludingGravity || event.acceleration;
     if (!vector || typeof vector.x !== "number" || typeof vector.y !== "number" || typeof vector.z !== "number") {
       dom.motion.textContent = "NO VEC";
+      renderSensorDiagnostics();
       return;
     }
 
     state.lastMotionAt = Date.now();
-    dom.motion.textContent = state.running ? "LIVE" : "ON";
+    renderSensorDiagnostics();
 
     if (!state.running) {
       return;
@@ -532,9 +545,13 @@
     state.noise = state.noise * 0.96 + Math.abs(state.filteredSignal) * 0.04;
 
     var strength = Math.abs(state.filteredSignal);
+    state.lastMagnitude = magnitude;
+    state.lastStepSignal = strength;
+    state.lastStepSource = "A";
     detectMotionStep(Date.now(), strength);
     state.previousSignal = strength;
     renderSignal();
+    renderSensorDiagnostics();
   }
 
   function detectMotionStep(now, strength) {
@@ -576,23 +593,18 @@
   }
 
   function onOrientation(event) {
+    state.orientationEvents += 1;
     var beta = typeof event.beta === "number" ? event.beta : null;
     var gamma = typeof event.gamma === "number" ? event.gamma : null;
     var alpha = typeof event.alpha === "number" ? event.alpha : null;
 
     if (beta === null && gamma === null && alpha === null) {
-      dom.orientation.textContent = "ON";
+      renderSensorDiagnostics();
       return;
     }
 
     var tilt = Math.max(Math.abs(beta || 0), Math.abs(gamma || 0));
-    if (tilt < 12) {
-      dom.orientation.textContent = "LEVEL";
-    } else if (tilt < 35) {
-      dom.orientation.textContent = Math.round(tilt) + " DEG";
-    } else {
-      dom.orientation.textContent = "TILT";
-    }
+    renderSensorDiagnostics();
 
     if (!state.running) {
       return;
@@ -613,6 +625,8 @@
       var delta = Math.sqrt(betaDelta * betaDelta + gammaDelta * gammaDelta + alphaDelta * alphaDelta);
       state.orientationSignal = state.orientationSignal * 0.62 + delta * 0.38;
       state.orientationNoise = state.orientationNoise * 0.95 + state.orientationSignal * 0.05;
+      state.lastStepSignal = state.orientationSignal;
+      state.lastStepSource = "O";
       detectOrientationStep(now, state.orientationSignal);
       state.previousOrientationSignal = state.orientationSignal;
       renderSignal();
@@ -686,14 +700,28 @@
   }
 
   function renderSignal() {
-    var absSignal = Math.abs(state.filteredSignal);
-    if (absSignal < 0.2) {
-      dom.signal.textContent = "LOW";
-    } else if (absSignal < 0.8) {
-      dom.signal.textContent = "MID";
-    } else {
-      dom.signal.textContent = "HIGH";
+    if (state.lastStepSignal === null) {
+      dom.signal.textContent = "--";
+      return;
     }
+    dom.signal.textContent = state.lastStepSource + " " + state.lastStepSignal.toFixed(2);
+  }
+
+  function renderSensorDiagnostics() {
+    if (dom.motion && state.motionEvents > 0) {
+      dom.motion.textContent = "M " + formatCount(state.motionEvents);
+    }
+    if (dom.orientation && state.orientationEvents > 0) {
+      dom.orientation.textContent = "O " + formatCount(state.orientationEvents);
+    }
+    renderSignal();
+  }
+
+  function formatCount(value) {
+    if (value > 999) {
+      return "999+";
+    }
+    return String(value);
   }
 
   function renderSensitivity() {
